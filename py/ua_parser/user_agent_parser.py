@@ -31,7 +31,7 @@ ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
 DATA_DIR = os.path.abspath(os.path.join(ROOT_DIR, '..', 'data'))
 regex_dir = ROOT_DIR if os.path.exists(os.path.join(ROOT_DIR, 'regexes.yaml')) else DATA_DIR
 
-from pkg_resources import resource_filename
+from pkg_resources import resource_stream
 
 
 class UserAgentParser(object):
@@ -405,27 +405,22 @@ def GetFilters(user_agent_string, js_user_agent_string=None,
 UA_PARSER_YAML = os.getenv("UA_PARSER_YAML")
 regexes = None
 
-if not UA_PARSER_YAML:
-    yamlPath = resource_filename(__name__, 'regexes.yaml')
-    json_path = resource_filename(__name__, 'regexes.json')
-else:
+# If UA_PARSER_YAML is defined, use its value as the path to a yaml file
+if UA_PARSER_YAML:
     import yaml
-
     yamlFile = open(UA_PARSER_YAML)
     regexes = yaml.load(yamlFile)
     yamlFile.close()
 
-# If UA_PARSER_YAML is not specified, load regexes from regexes.json before
-# falling back to yaml format
+# Otherwise, try from the default json location, then the default yaml location
 if regexes is None:
     try:
-        json_file = open(json_path)
-        regexes = json.loads(json_file.read())
-        json_file.close()
-    except IOError:
+        jsonFile = resource_stream(__name__, 'regexes.json')
+        regexes = json.loads(jsonFile.read())
+        jsonFile.close()
+    except:
         import yaml
-
-        yamlFile = open(yamlPath)
+        yamlFile = resource_stream(__name__, 'regexes.yaml')
         regexes = yaml.load(yamlFile)
         yamlFile.close()
 
